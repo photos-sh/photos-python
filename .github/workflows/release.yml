@@ -1,0 +1,86 @@
+name: Release
+
+# Publishes the package to PyPI when a tag `v<version>` is pushed, or when
+# run by hand (workflow_dispatch) for the version the code says. Running it
+# by hand is how a version that was tagged before this workflow existed gets
+# published.
+#
+# No token is stored. PyPI trusts this workflow (Trusted Publishing), which
+# is set up once on pypi.org, under Publishing in the account settings, as a
+# pending publisher:
+#
+#   PyPI project name   photos-sh
+#   Owner               photos-sh
+#   Repository name     photos-python
+#   Workflow name       release.yml
+#   Environment name    pypi
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per tag or branch, and never cancelled: an upload cut short leaves
+# a release with some of its files.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: build and publish to PyPI
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      # The short-lived identity that PyPI exchanges for an upload token.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history: the commit is checked against main below.
+          fetch-depth: 0
+      # setup-uv has no moving major tag after v7: pin the full version.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      # The version is the code's own (src/photos_sh/_version.py); a tag has
+      # to say the same.
+      - name: the tag is the code's version
+        run: |
+          version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/photos_sh/_version.py)"
+          test -n "$version" || { echo "No version in src/photos_sh/_version.py."; exit 1; }
+          echo "Version $version"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "The tag is $GITHUB_REF_NAME, but the code says $version."
+            exit 1
+          fi
+
+      # A release from a side branch would publish code main never saw.
+      - name: the commit is on main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "$GITHUB_SHA is not on main. Merge first, then tag the merged commit."
+            exit 1
+          fi
+
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - run: uv run pytest
+
+      # The wheel and the source archive, in dist/.
+      - run: uv build
+
+      # A version that is already on PyPI is left alone, so running this
+      # again does no harm.
+      - name: publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

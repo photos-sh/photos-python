@@ -534,6 +534,10 @@ Integration tests run against a real engine when both variables are set:
 PHOTOS_TEST_BASE_URL=http://127.0.0.1:8098/api PHOTOS_TEST_API_KEY=... uv run pytest tests/test_integration.py
 ```
 
+A release is a tag: set the version in `src/photos_sh/_version.py`, merge to
+`main`, and push the tag `v<version>`. `.github/workflows/release.yml` checks
+it, builds the package and publishes it to PyPI.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
