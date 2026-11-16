@@ -56,9 +56,9 @@ class FixResult(ImageResult):
 class RemoveBackgroundResult(ImageResult):
     """The cutout, or the staged image.
 
-    ``subject_found`` is ``False`` when a canvas was asked for and the photo
-    has no subject: the canvas is then empty. Otherwise the API does not say,
-    and it is ``None``.
+    ``subject_found`` is ``False`` when no subject was found (under 3% of the
+    photo): the photo is then returned as it was. Otherwise the API does not
+    say, and it is ``None``.
     """
 
     subject_found: Optional[bool] = None
@@ -186,8 +186,8 @@ class JobItemResult(ImageResult):
     def remove_background(self) -> RemoveBackgroundResult:
         """This item as the result of ``remove_background``, with ``subject_found``.
 
-        It does not raise: the API sends ``X-Subject-Found`` only when a
-        canvas was asked for and the photo has no subject, so the header is
+        It does not raise: the API sends ``X-Subject-Found`` when no subject
+        was found (the photo is then returned as it was), so the header is
         absent from most results, and ``subject_found`` is then ``None``.
         """
         return _remove_background(self.content, _lower(self.headers))

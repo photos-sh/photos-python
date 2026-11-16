@@ -170,7 +170,18 @@ def test_remove_background_staged(api: Harness) -> None:
         ("reflection", "true"),
     ]
     assert_one_image(api.request)
-    assert result.subject_found is False  # an empty canvas
+    assert result.subject_found is False  # no subject was found
+
+
+def test_remove_background_of_a_studio_shot(api: Harness) -> None:
+    api.run(lambda c: c.remove_background(PNG, studio=True, crop=True), image_response())
+    assert_post(api.request, "/v1/remove-background")
+    assert query(api.request) == [("crop", "true"), ("studio", "true")]
+    assert_one_image(api.request)
+
+    api.requests.clear()
+    api.run(lambda c: c.remove_background(PNG, studio=None), image_response())
+    assert api.request.url.query == b""  # not sent unless given
 
 
 def test_remove_background_with_a_background_image(api: Harness, tmp_path: Path) -> None:
@@ -1268,7 +1279,7 @@ def test_jobs_item_as_a_remove_background_result(api: Harness) -> None:
     )
     result = item.remove_background()
     assert type(result) is RemoveBackgroundResult
-    assert result.subject_found is False  # an empty canvas
+    assert result.subject_found is False  # no subject was found
     assert (result.content, result.width, result.height) == (PNG, 64, 48)
     assert result == direct  # the same reading as the client's method
 

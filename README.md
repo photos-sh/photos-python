@@ -90,8 +90,8 @@ Some methods return a subclass with more to say about the result:
 | `select` | `SelectResult` | `score` |
 
 `subject_found` is `True`, `False`, or `None` when the API did not say.
-`remove_background` only says `False`, and only when a canvas was asked for
-and the photo has no subject: the canvas is then empty.
+`remove_background` only says `False`, when no subject was found (under 3% of
+the photo): the photo is then returned as it was.
 
 Methods that return JSON give the decoded `dict` or `list`, typed as a
 `TypedDict` (`CheckResult`, `LabelResult`, `Job`, ...). Fields the API adds
@@ -121,9 +121,15 @@ staged = photos.remove_background(
     background="white",
     format="jpg",
 )
-print(staged.subject_found)  # False when the photo has no subject: the canvas is then empty
+print(staged.subject_found)  # False when no subject was found: the photo comes back as it was
 on_beach = photos.remove_background("shoe.jpg", background_image="beach.jpg", shadow="drop")
 soft = photos.remove_background("shoe.jpg", blur=40)
+
+# A studio shot (a product on a plain, light backdrop, as in a light tent): also
+# keep what clearly stands out from the backdrop and touches the product, such as
+# the gift box, case or lid shown with a bottle. Shadows and the floor are left
+# out, and a photo without a plain light backdrop is cut out as without it.
+boxed = photos.remove_background("bottle.jpg", studio=True)
 
 # Resize, convert and compress.
 small = photos.resize("shoe.jpg", width=1200, height=1200, fit="cover", format="webp", quality=80)
@@ -413,8 +419,8 @@ print(photos.jobs.item(select_job["id"], 0).select().score)
 Each raises `PhotosError` when the item does not carry that operation's
 headers: it came from another operation, or from an older server that does
 not keep them on job items. Only `remove_background()` does not raise: the
-API sends its header for an empty canvas alone, so `subject_found` is
-`False` then and `None` otherwise. The same values are in the job itself, as
+API sends its header when no subject was found, and the photo is then
+returned as it was, so `subject_found` is `False` then and `None` otherwise. The same values are in the job itself, as
 `job["items"][n]["headers"]` (lower-case names, e.g. `x-marketplace-passed`,
 `x-faces`).
 

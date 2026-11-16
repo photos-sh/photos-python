@@ -211,6 +211,7 @@ class Photos(BaseClient):
         background: Optional[str] = None,
         crop: Optional[bool] = None,
         padding: Optional[int] = None,
+        studio: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
         height: Optional[int] = None,
@@ -222,6 +223,13 @@ class Photos(BaseClient):
         background_image: Optional[ImageInput] = None,
     ) -> RemoveBackgroundResult:
         """Remove the background. PNG with transparency unless told otherwise.
+
+        ``studio`` is for studio shots (a product on a plain, light backdrop,
+        as in a light tent): it also keeps what clearly stands out from the
+        backdrop and touches the product, such as the gift box, case or lid
+        shown with a bottle, or a pale box the model left half transparent.
+        Shadows and the floor below the product are left out. A photo without
+        a plain light backdrop is cut out as without it.
 
         The cutout can be staged in the same call: ``width`` and ``height``
         place the subject on a canvas, ``shadow`` and ``reflection`` go under
@@ -236,6 +244,7 @@ class Photos(BaseClient):
                 background=background,
                 crop=crop,
                 padding=padding,
+                studio=studio,
                 mask=mask,
                 width=width,
                 height=height,
@@ -850,6 +859,7 @@ class AsyncPhotos(BaseClient):
         background: Optional[str] = None,
         crop: Optional[bool] = None,
         padding: Optional[int] = None,
+        studio: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
         height: Optional[int] = None,
@@ -861,6 +871,13 @@ class AsyncPhotos(BaseClient):
         background_image: Optional[ImageInput] = None,
     ) -> RemoveBackgroundResult:
         """Remove the background. PNG with transparency unless told otherwise.
+
+        ``studio`` is for studio shots (a product on a plain, light backdrop,
+        as in a light tent): it also keeps what clearly stands out from the
+        backdrop and touches the product, such as the gift box, case or lid
+        shown with a bottle, or a pale box the model left half transparent.
+        Shadows and the floor below the product are left out. A photo without
+        a plain light backdrop is cut out as without it.
 
         The cutout can be staged in the same call: ``width`` and ``height``
         place the subject on a canvas, ``shadow`` and ``reflection`` go under
@@ -875,6 +892,7 @@ class AsyncPhotos(BaseClient):
                 background=background,
                 crop=crop,
                 padding=padding,
+                studio=studio,
                 mask=mask,
                 width=width,
                 height=height,
