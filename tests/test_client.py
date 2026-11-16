@@ -81,7 +81,7 @@ def test_headers_and_url(api: Harness) -> None:
     assert str(request.url) == "http://h:1/x/v1/account"
     assert request.headers["authorization"] == "Bearer secret"
     assert request.headers["user-agent"] == f"photos-sh-python/{photos_sh.__version__}"
-    assert photos_sh.__version__ == "1.0.0"
+    assert photos_sh.__version__ == "1.1.0"
 
 
 def test_timeout_is_passed_to_the_request(api: Harness) -> None:
