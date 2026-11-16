@@ -339,7 +339,11 @@ class Photos(BaseClient):
         preset: Optional[str] = None,
         recipe: Optional[str] = None,
     ) -> ImageResult:
-        """Apply a built-in ``preset`` (by name) or a ``recipe`` (TOML text)."""
+        """Apply a built-in ``preset`` (by name) or a ``recipe`` (TOML text).
+
+        A recipe's ``[barcodes]`` and ``[text]`` steps fill the result's
+        ``barcodes`` and ``text``.
+        """
         return self._send(r.run(image, preset=preset, recipe=recipe))
 
     def enhance(
@@ -700,6 +704,10 @@ class Photos(BaseClient):
         """The built-in presets for :meth:`run`."""
         return self._send(r.presets())
 
+    def preset(self, name: str) -> str:
+        """A built-in preset's recipe, as TOML text: a start for your own ``recipe``."""
+        return self._send(r.preset(name))
+
     def marketplaces(self) -> list[MarketplaceProfile]:
         """Each marketplace's image rules and what :meth:`fix` produces."""
         return self._send(r.marketplaces())
@@ -989,7 +997,11 @@ class AsyncPhotos(BaseClient):
         preset: Optional[str] = None,
         recipe: Optional[str] = None,
     ) -> ImageResult:
-        """Apply a built-in ``preset`` (by name) or a ``recipe`` (TOML text)."""
+        """Apply a built-in ``preset`` (by name) or a ``recipe`` (TOML text).
+
+        A recipe's ``[barcodes]`` and ``[text]`` steps fill the result's
+        ``barcodes`` and ``text``.
+        """
         return await self._send(r.run(image, preset=preset, recipe=recipe))
 
     async def enhance(
@@ -1353,6 +1365,10 @@ class AsyncPhotos(BaseClient):
     async def presets(self) -> list[Preset]:
         """The built-in presets for :meth:`run`."""
         return await self._send(r.presets())
+
+    async def preset(self, name: str) -> str:
+        """A built-in preset's recipe, as TOML text: a start for your own ``recipe``."""
+        return await self._send(r.preset(name))
 
     async def marketplaces(self) -> list[MarketplaceProfile]:
         """Each marketplace's image rules and what :meth:`fix` produces."""

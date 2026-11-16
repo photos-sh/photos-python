@@ -6,6 +6,16 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+- `ImageResult` has `barcodes`, `text` and `text_truncated`: what a `run`
+  recipe's reading steps, `[barcodes]` (optionally `all_formats = true`) and
+  `[text]`, read, from the `X-Barcodes`, `X-Text` and `X-Text-Truncated`
+  headers. `barcodes` is a list of `Barcode` (now exported) and `text` the
+  lines top to bottom; each is `None` when its step was not in the recipe
+  (and when the header is not JSON of the expected shape), `[]` when it ran
+  and found nothing. Job items keep them. Reading steps need the engine
+  release with Vallic/photos#7; an older engine answers `422`.
+- `preset(name)`: a built-in preset's recipe as TOML text
+  (`GET /v1/presets/{name}`); an unknown name raises `NotFoundError`.
 - `remove_background` takes `studio`, for studio shots (a product on a plain,
   light backdrop): it also keeps what clearly stands out from the backdrop and
   touches the product, such as the gift box, case or lid shown with a bottle.

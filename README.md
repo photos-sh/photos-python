@@ -152,7 +152,36 @@ result = photos.remove_text("listing.jpg", region="all", matching=r"sale|www\.")
 # Apply a built-in preset, or your own recipe (TOML).
 main = photos.run("shoe.jpg", preset="marketplace")
 custom = photos.run("shoe.jpg", recipe=open("recipe.toml").read())
+# A preset's recipe, as TOML text: a start for your own.
+print(photos.preset("marketplace"))
 ```
+
+A recipe can also read the photo: `[barcodes]` (with `all_formats = true`
+for QR, Code 128 and the rest) and `[text]`. The result is still the image;
+what was read is on it:
+
+```python
+recipe = """
+[barcodes]
+all_formats = true
+
+[text]
+
+[output]
+max_side = 1200
+"""
+result = photos.run("box.jpg", recipe=recipe)
+for code in result.barcodes or []:
+    print(code["format"], code["value"], code.get("gs1"))
+print(result.text)  # ["Pršut", "500 g"]: the lines, top to bottom
+if result.text_truncated:
+    print("some lines were left out")
+```
+
+`barcodes` and `text` are `None` when the recipe has no such step, and `[]`
+when the step ran and found nothing. Job items of a `run` job carry them too.
+Reading steps need the engine release with Vallic/photos#7; an older engine
+answers `422` (`UnprocessableError`).
 
 Light, shape and marks:
 
@@ -314,6 +343,7 @@ print(described["caption"])
 ```python
 photos.account()  # {"account": ..., "credits": ..., "prices": {...}}
 photos.presets()  # [{"name": "marketplace", "description": ...}, ...]
+photos.preset("marketplace")  # that preset's recipe, as TOML text
 photos.marketplaces()  # each marketplace's rules and what fix produces
 photos.id_photos()  # the documents id_photo knows: sizes, notes and sources
 photos.webhook_secret()  # {"secret": "whsec_...", "header": "Photos-Signature", ...}

@@ -41,6 +41,7 @@ from ._results import (
 )
 from ._types import (
     Account,
+    Barcode,
     BarcodesResult,
     CaptionResult,
     CheckResult,
@@ -81,6 +82,7 @@ __all__ = [
     "AsyncPhotos",
     "AuthenticationError",
     "BadRequestError",
+    "Barcode",
     "BarcodesResult",
     "BlurFacesResult",
     "BusyError",

@@ -7,11 +7,12 @@ import math
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 import httpx
 
 from ._errors import PhotosError
+from ._types import Barcode
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,15 @@ class ImageResult:
     ``width``, ``height`` and ``quality`` come from the ``X-Image-*`` headers;
     ``quality`` is only present for lossy formats. ``server_timing`` is the raw
     ``Server-Timing`` header (per-step durations).
+
+    ``barcodes`` and ``text`` are what a :meth:`~photos_sh.Photos.run` recipe's
+    reading steps read (``[barcodes]`` and ``[text]``), from the ``X-Barcodes``
+    and ``X-Text`` headers: the barcodes found, and the lines of text top to
+    bottom. Each is ``None`` when its step was not in the recipe (no header),
+    and an empty list when the step ran and found nothing. A header that is not
+    JSON of the expected shape is taken as absent: ``None``, not an error.
+    ``text_truncated`` is ``True`` when lines were left out of ``text`` to keep
+    the header small.
     """
 
     content: bytes = field(repr=False)
@@ -29,6 +39,9 @@ class ImageResult:
     height: Optional[int] = None
     quality: Optional[int] = None
     server_timing: Optional[str] = None
+    barcodes: Optional[list[Barcode]] = None
+    text: Optional[list[str]] = None
+    text_truncated: bool = False
 
     def save(self, path: Union[str, os.PathLike[str]]) -> None:
         """Write the bytes to ``path``."""
@@ -255,6 +268,42 @@ def _codes(headers: Mapping[str, str], name: str) -> list[str]:
     return [code for code in codes if code]
 
 
+def _json_list(headers: Mapping[str, str], name: str) -> Optional[list[Any]]:
+    """A JSON array; None when the header is absent or is not one."""
+    value = headers.get(name)
+    if value is None:
+        return None
+    try:
+        items = json.loads(value)
+    except ValueError:
+        return None
+    return items if isinstance(items, list) else None
+
+
+def _barcodes(headers: Mapping[str, str]) -> Optional[list[Barcode]]:
+    """``X-Barcodes``: None when absent, or when any item is not a barcode."""
+    items = _json_list(headers, "x-barcodes")
+    if items is None:
+        return None
+    for item in items:
+        if not (
+            isinstance(item, dict)
+            and isinstance(item.get("format"), str)
+            and isinstance(item.get("value"), str)
+            and isinstance(item.get("gs1"), (str, type(None)))
+        ):
+            return None
+    return cast(list[Barcode], items)
+
+
+def _lines(headers: Mapping[str, str]) -> Optional[list[str]]:
+    """``X-Text``: None when absent, or when any item is not a string."""
+    items = _json_list(headers, "x-text")
+    if items is None or not all(isinstance(item, str) for item in items):
+        return None
+    return cast(list[str], items)
+
+
 def _image_fields(content: bytes, headers: Mapping[str, str]) -> dict[str, Any]:
     return {
         "content": content,
@@ -263,6 +312,9 @@ def _image_fields(content: bytes, headers: Mapping[str, str]) -> dict[str, Any]:
         "height": _int(headers, "x-image-height"),
         "quality": _int(headers, "x-image-quality"),
         "server_timing": headers.get("server-timing"),
+        "barcodes": _barcodes(headers),
+        "text": _lines(headers),
+        "text_truncated": _bool(headers, "x-text-truncated") is True,
     }
 
 

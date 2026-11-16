@@ -387,6 +387,10 @@ def presets() -> Request[list[Preset]]:
     return Request("GET", "/v1/presets", _json)
 
 
+def preset(name: str) -> Request[str]:
+    return Request("GET", "/v1/presets/" + quote(name, safe=""), lambda response: response.text)
+
+
 def marketplaces() -> Request[list[MarketplaceProfile]]:
     return Request("GET", "/v1/marketplaces", _json)
 

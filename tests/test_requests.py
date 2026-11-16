@@ -345,6 +345,80 @@ def test_run_needs_exactly_one_of_preset_and_recipe(api: Harness) -> None:
     assert api.requests == []
 
 
+# What a recipe's reading steps read, as the engine sends it: JSON, non-ASCII escaped.
+BARCODES = '[{"format":"EAN-13","value":"3850104010017","gs1":"3850104010017"},' + (
+    '{"format":"QR","value":"https://photos.sh","gs1":null}]'
+)
+TEXT = '["Pr\\u0161ut","500 g","\\ud83d\\ude00"]'
+
+
+def test_run_with_reading_steps(api: Harness) -> None:
+    recipe = "[barcodes]\nall_formats = true\n\n[text]\n"
+    result = api.run(
+        lambda c: c.run(PNG, recipe=recipe),
+        image_response({"X-Barcodes": BARCODES, "X-Text": TEXT, "X-Text-Truncated": "true"}),
+    )
+    assert isinstance(result, ImageResult)
+    assert result.content == PNG
+    assert result.barcodes == [
+        {"format": "EAN-13", "value": "3850104010017", "gs1": "3850104010017"},
+        {"format": "QR", "value": "https://photos.sh", "gs1": None},
+    ]
+    assert result.text == ["Pršut", "500 g", "\U0001f600"]
+    assert result.text_truncated is True
+
+
+def test_run_without_reading_steps(api: Harness) -> None:
+    result = api.run(lambda c: c.run(PNG, preset="marketplace"), image_response())
+    assert result.barcodes is None  # the step was not in the recipe
+    assert result.text is None
+    assert result.text_truncated is False
+
+
+def test_run_with_reading_steps_that_found_nothing(api: Harness) -> None:
+    result = api.run(
+        lambda c: c.run(PNG, recipe="[barcodes]\n[text]\n"),
+        image_response({"x-barcodes": "[]", "x-text": "[]"}),
+    )
+    assert result.barcodes == []
+    assert result.text == []
+    assert result.text_truncated is False
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "",
+        "not json",
+        "[",
+        '{"barcodes": []}',
+        '"EAN-13"',
+        "[1, 2]",
+        '[{"format": "EAN-13"}]',
+        '[{"format": "EAN-13", "value": 385}]',
+        '[{"format": "EAN-13", "value": "385", "gs1": 385}]',
+    ],
+)
+def test_unreadable_barcodes_header_is_taken_as_absent(api: Harness, value: str) -> None:
+    result = api.run(lambda c: c.run(PNG, preset="web"), image_response({"x-barcodes": value}))
+    assert result.barcodes is None
+
+
+@pytest.mark.parametrize("value", ["", "not json", '"Pr\\u0161ut"', '{"lines": []}', '["a", 1]'])
+def test_unreadable_text_header_is_taken_as_absent(api: Harness, value: str) -> None:
+    result = api.run(lambda c: c.run(PNG, preset="web"), image_response({"x-text": value}))
+    assert result.text is None
+
+
+@pytest.mark.parametrize(("value", "truncated"), [("true", True), ("false", False), ("x", False)])
+def test_text_truncated(api: Harness, value: str, truncated: bool) -> None:
+    result = api.run(
+        lambda c: c.run(PNG, preset="web"),
+        image_response({"x-text": "[]", "x-text-truncated": value}),
+    )
+    assert result.text_truncated is truncated
+
+
 def test_enhance(api: Harness) -> None:
     result = api.run(
         lambda c: c.enhance(
@@ -984,6 +1058,38 @@ def test_get_endpoints(api: Harness, method: str, path: str, body: Any) -> None:
     assert result == body
 
 
+def test_preset(api: Harness) -> None:
+    toml = '# Marketplace\n[resize]\nwidth = 2000\n# "Pršut"\n'
+    response = httpx.Response(
+        200,
+        content=toml.encode(),
+        headers={"content-type": "application/toml; charset=utf-8"},
+    )
+    result = api.run(lambda c: c.preset("marketplace"), response)
+    assert api.request.method == "GET"
+    assert api.request.url.path == "/api/v1/presets/marketplace"
+    assert api.request.headers["authorization"] == "Bearer test-key"
+    assert api.request.content == b""
+    assert result == toml
+
+
+def test_preset_names_are_escaped_in_the_path(api: Harness) -> None:
+    api.run(lambda c: c.preset("a/b c?"), httpx.Response(200, text="[resize]\n"))
+    assert api.request.url.raw_path == b"/api/v1/presets/a%2Fb%20c%3F"
+
+
+def test_an_unknown_preset_is_not_found(api: Harness) -> None:
+    from photos_sh import NotFoundError
+
+    with pytest.raises(NotFoundError) as caught:
+        api.run(
+            lambda c: c.preset("nope"),
+            json_response({"error": {"code": "not_found", "message": "no preset nope"}}, 404),
+        )
+    assert (caught.value.status, caught.value.code) == (404, "not_found")
+    assert caught.value.message == "no preset nope"
+
+
 @pytest.mark.parametrize(("status", "state"), [(200, "ok"), (503, "loading"), (503, "failed")])
 def test_health(api: Harness, status: int, state: str) -> None:
     result = api.run(lambda c: c.health(), json_response({"status": state}, status))
@@ -1163,6 +1269,17 @@ def test_jobs_item_as_an_image(api: Harness) -> None:
     assert result.content == PNG
     assert (result.width, result.height, result.quality) == (64, 48, 80)
     assert result.headers["X-Image-Width"] == "64"
+
+
+def test_jobs_item_keeps_what_the_reading_steps_read(api: Harness) -> None:
+    item = api.run(
+        lambda c: c.jobs.item("job_1", 0),
+        image_response({"X-Barcodes": BARCODES, "X-Text": TEXT, "X-Text-Truncated": "true"}),
+    )
+    assert item.barcodes is not None
+    assert [code["value"] for code in item.barcodes] == ["3850104010017", "https://photos.sh"]
+    assert item.text == ["Pršut", "500 g", "\U0001f600"]
+    assert item.text_truncated is True
 
 
 def test_jobs_item_as_json(api: Harness) -> None:
