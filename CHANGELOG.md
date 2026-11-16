@@ -6,6 +6,8 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.2.0 (2026-11-16)
+
 - `ImageResult` has `barcodes`, `text` and `text_truncated`: what a `run`
   recipe's reading steps, `[barcodes]` (optionally `all_formats = true`) and
   `[text]`, read, from the `X-Barcodes`, `X-Text` and `X-Text-Truncated`
@@ -16,6 +18,9 @@ follows [Semantic Versioning](https://semver.org/).
   release with Vallic/photos#7; an older engine answers `422`.
 - `preset(name)`: a built-in preset's recipe as TOML text
   (`GET /v1/presets/{name}`); an unknown name raises `NotFoundError`.
+
+## 1.1.0 (2026-11-16)
+
 - `remove_background` takes `studio`, for studio shots (a product on a plain,
   light backdrop): it also keeps what clearly stands out from the backdrop and
   touches the product, such as the gift box, case or lid shown with a bottle.
@@ -25,7 +30,7 @@ follows [Semantic Versioning](https://semver.org/).
   `X-Subject-Found: false`, whenever no subject is found (under 3% of the
   photo), not only for an empty canvas.
 
-## 1.0.0 (unreleased)
+## 1.0.0 (2026-11-13)
 
 First version.
 
