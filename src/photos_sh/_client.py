@@ -33,6 +33,7 @@ from ._results import (
 from ._types import (
     Account,
     Align,
+    BackgroundModel,
     BarcodeEngine,
     BarcodesResult,
     BlurMode,
@@ -211,6 +212,7 @@ class Photos(BaseClient):
         background: Optional[str] = None,
         crop: Optional[bool] = None,
         padding: Optional[int] = None,
+        model: Optional[BackgroundModel] = None,
         studio: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
@@ -223,6 +225,21 @@ class Photos(BaseClient):
         background_image: Optional[ImageInput] = None,
     ) -> RemoveBackgroundResult:
         """Remove the background. PNG with transparency unless told otherwise.
+
+        ``model`` picks the model that finds the subject; each costs the same,
+        so try another when one drops part of what you sell. Left out, the API
+        uses its default, ``"atlas"``:
+
+        - ``"atlas"``: everyday product photos, a product alone or with its
+          box, on any backdrop.
+        - ``"lumen"``: pale packaging on a light backdrop, such as a cream or
+          wooden box beside a bottle, and close-ups where the product fills
+          the photo; on those, ``"atlas"`` can keep the bottle and drop the
+          box. It may keep a dark backdrop at the photo's edge, and can cut
+          away part of an open frame or wire stand.
+        - ``"muse"``: people, in portraits and as models wearing the product.
+
+        Another name is sent as it is, for models the API adds later.
 
         ``studio`` is for studio shots (a product on a plain, light backdrop,
         as in a light tent): it also keeps what clearly stands out from the
@@ -244,6 +261,7 @@ class Photos(BaseClient):
                 background=background,
                 crop=crop,
                 padding=padding,
+                model=model,
                 studio=studio,
                 mask=mask,
                 width=width,
@@ -867,6 +885,7 @@ class AsyncPhotos(BaseClient):
         background: Optional[str] = None,
         crop: Optional[bool] = None,
         padding: Optional[int] = None,
+        model: Optional[BackgroundModel] = None,
         studio: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
@@ -879,6 +898,21 @@ class AsyncPhotos(BaseClient):
         background_image: Optional[ImageInput] = None,
     ) -> RemoveBackgroundResult:
         """Remove the background. PNG with transparency unless told otherwise.
+
+        ``model`` picks the model that finds the subject; each costs the same,
+        so try another when one drops part of what you sell. Left out, the API
+        uses its default, ``"atlas"``:
+
+        - ``"atlas"``: everyday product photos, a product alone or with its
+          box, on any backdrop.
+        - ``"lumen"``: pale packaging on a light backdrop, such as a cream or
+          wooden box beside a bottle, and close-ups where the product fills
+          the photo; on those, ``"atlas"`` can keep the bottle and drop the
+          box. It may keep a dark backdrop at the photo's edge, and can cut
+          away part of an open frame or wire stand.
+        - ``"muse"``: people, in portraits and as models wearing the product.
+
+        Another name is sent as it is, for models the API adds later.
 
         ``studio`` is for studio shots (a product on a plain, light backdrop,
         as in a light tent): it also keeps what clearly stands out from the
@@ -900,6 +934,7 @@ class AsyncPhotos(BaseClient):
                 background=background,
                 crop=crop,
                 padding=padding,
+                model=model,
                 studio=studio,
                 mask=mask,
                 width=width,

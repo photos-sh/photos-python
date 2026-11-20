@@ -6,6 +6,16 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.3.0 (2026-11-20)
+
+- `remove_background` takes `model`, the model that finds the subject:
+  `"atlas"` (the API's default) for everyday product photos, `"lumen"` for
+  pale packaging on a light backdrop and close-ups where the product fills the
+  photo, `"muse"` for people. Each costs the same. It takes those names or
+  any other string, so a model the API adds later works without a new
+  release; it is sent only when given, and works with `studio`. A
+  `remove-background` job takes it in `params`. Needs engine 0.1.14.
+
 ## 1.2.0 (2026-11-16)
 
 - `ImageResult` has `barcodes`, `text` and `text_truncated`: what a `run`

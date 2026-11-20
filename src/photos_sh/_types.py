@@ -28,6 +28,10 @@ BarcodeEngine = Literal["auto", "zbar", "rxing"]
 Region = Literal["background", "all"]
 Align = Literal["center", "top", "bottom"]
 Shadow = Literal["none", "contact", "drop"]
+#: The model that finds the subject in ``remove_background``: ``"atlas"`` (the
+#: API's default), ``"lumen"`` or ``"muse"``. Any other string is sent as it is,
+#: so a model the API adds later works without a new release of this library.
+BackgroundModel = Union[Literal["atlas", "lumen", "muse"], str]
 CropFocus = Literal["subject", "face"]
 WatermarkPosition = Literal[
     "top-left",

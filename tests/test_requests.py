@@ -184,6 +184,27 @@ def test_remove_background_of_a_studio_shot(api: Harness) -> None:
     assert api.request.url.query == b""  # not sent unless given
 
 
+def test_remove_background_with_a_model(api: Harness) -> None:
+    api.run(
+        lambda c: c.remove_background(PNG, crop=True, model="lumen", studio=True), image_response()
+    )
+    assert_post(api.request, "/v1/remove-background")
+    assert query(api.request) == [("crop", "true"), ("model", "lumen"), ("studio", "true")]
+    assert_one_image(api.request)
+
+    api.requests.clear()
+    api.run(lambda c: c.remove_background(PNG, model="atlas"), image_response())
+    assert query(api.request) == [("model", "atlas")]  # sent when given, even the default
+
+    api.requests.clear()
+    api.run(lambda c: c.remove_background(PNG, model="nova"), image_response())
+    assert query(api.request) == [("model", "nova")]  # a model the API adds later
+
+    api.requests.clear()
+    api.run(lambda c: c.remove_background(PNG, model=None), image_response())
+    assert api.request.url.query == b""  # not sent unless given, so the API's default applies
+
+
 def test_remove_background_with_a_background_image(api: Harness, tmp_path: Path) -> None:
     api.run(
         lambda c: c.remove_background(PNG, shadow="drop", background_image=b"beach"),
@@ -1117,7 +1138,7 @@ def test_jobs_create_with_urls_sends_json(api: Harness) -> None:
         lambda c: c.jobs.create(
             "remove-background",
             urls=["https://example.com/1.jpg", "https://example.com/2.jpg"],
-            params={"format": "png", "crop": True, "padding": 10, "quality": None},
+            params={"format": "png", "crop": True, "padding": 10, "model": "muse", "quality": None},
             webhook_url="https://example.com/hook",
         ),
         json_response(JOB, 202),
@@ -1127,7 +1148,7 @@ def test_jobs_create_with_urls_sends_json(api: Harness) -> None:
     assert json.loads(api.request.content) == {
         "operation": "remove-background",
         "inputs": ["https://example.com/1.jpg", "https://example.com/2.jpg"],
-        "params": {"format": "png", "crop": True, "padding": 10},
+        "params": {"format": "png", "crop": True, "padding": 10, "model": "muse"},
         "webhook_url": "https://example.com/hook",
     }
     assert result == JOB
