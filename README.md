@@ -136,6 +136,12 @@ boxed = photos.remove_background("bottle.jpg", studio=True)
 boxed_bottle = photos.remove_background("perfume.jpg", model="lumen", studio=True)
 portrait = photos.remove_background("model.jpg", model="muse")
 
+# Change the cutout's edge. A dark bottle for a dark page: trim the light rim,
+# and make the edge crisp.
+bottle = photos.remove_background("bottle.jpg", shift=-1.5, hardness=50)
+# The model's hard edge: no feather.
+hard = photos.remove_background("shoe.jpg", feather=0)
+
 # Resize, convert and compress.
 small = photos.resize("shoe.jpg", width=1200, height=1200, fit="cover", format="webp", quality=80)
 light = photos.resize("shoe.jpg", width=1600, format="jpg", max_bytes=300_000)
@@ -172,6 +178,21 @@ The `model` of `remove_background` is the model that finds the subject:
 It is sent only when given. Any other string is passed through as it is, so a
 model the API adds later works without a new version of this library. It
 works with `studio`.
+
+Six options of `remove_background` change the cutout's edge:
+
+| Option | Range | Left out | What it does |
+|---|---|---|---|
+| `feather` | 0 to 10 pixels | Grows with the photo: 0.7 pixels for every 1000 of its long side | How soft the edge is. 0 is the model's hard edge. |
+| `smooth` | 0 to 10 | 0 | Irons out ripples in the outline. From about 4 it rounds small corners and breaks up thin parts, such as a wire stand. |
+| `shift` | -10 to 10 pixels | 0 | Moves the edge: inward when negative, outward when positive. A small negative shift trims the light rim a dark subject shows on a dark background. |
+| `hardness` | 0 to 100 | 0 | Narrows the edge, after the feather: at 100 it is about a pixel wide. On a dark background, pair it with a small negative `shift`. |
+| `decontaminate` | `True` or `False` | `True` | Cleans the old background's colour out of the soft edge. `False` keeps the photo's own colours there. |
+| `solidify` | `True` or `False` | `False` | Makes semi-transparent areas inside the subject opaque, for an opaque product the model was unsure about. Wrong for glass, smoke or hair. |
+
+An option left out is not sent; `feather=0` and `decontaminate=False` are
+sent. The API checks the ranges: a value outside one raises
+`BadRequestError`, with a message such as `shift must be between -10 and 10`.
 
 A recipe can also read the photo: `[barcodes]` (with `all_formats = true`
 for QR, Code 128 and the rest) and `[text]`. The result is still the image;
@@ -417,9 +438,10 @@ Operations: `run`, `remove-background`, `resize`, `upscale`, `ocr`,
 `recipe="..."`.
 
 A job item is one image. So a `watermark` job takes `text` only, and a
-`remove-background` job no background image (`model` and `studio` it takes as
-the method does: `params={"model": "lumen", "studio": True}`). An option that
-repeats is a list, and a point is the string `"x,y"`:
+`remove-background` job no background image (`model`, `studio` and the edge
+options it takes as the method does:
+`params={"model": "lumen", "studio": True, "shift": -1.5, "hardness": 50}`).
+An option that repeats is a list, and a point is the string `"x,y"`:
 
 ```python
 job = photos.jobs.create(

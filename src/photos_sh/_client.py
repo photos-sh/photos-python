@@ -214,6 +214,12 @@ class Photos(BaseClient):
         padding: Optional[int] = None,
         model: Optional[BackgroundModel] = None,
         studio: Optional[bool] = None,
+        feather: Optional[float] = None,
+        smooth: Optional[float] = None,
+        shift: Optional[float] = None,
+        hardness: Optional[float] = None,
+        decontaminate: Optional[bool] = None,
+        solidify: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
         height: Optional[int] = None,
@@ -248,6 +254,28 @@ class Photos(BaseClient):
         Shadows and the floor below the product are left out. A photo without
         a plain light backdrop is cut out as without it.
 
+        Six options change the cutout's edge. Each is sent only when given;
+        ``feather=0`` and ``decontaminate=False`` are values, and are sent:
+
+        - ``feather``: how soft the edge is, a blur of this many pixels across
+          it, 0 to 10. 0 is the model's hard edge. Left out, it grows with the
+          photo: 0.7 pixels for every 1000 of its long side.
+        - ``smooth``: irons out ripples in the outline, 0 (the API's default)
+          to 10. From about 4 it rounds small corners and breaks up thin
+          parts, such as a wire stand.
+        - ``shift``: moves the edge, in pixels, -10 to 10 (the API's default
+          is 0): inward when negative, outward when positive. A small negative
+          shift trims the light rim a dark subject shows on a dark background.
+        - ``hardness``: narrows the edge, after the feather: 0 (the API's
+          default) to 100, where it is about a pixel wide. On a dark
+          background, pair it with a small negative ``shift``.
+        - ``decontaminate``: cleans the old background's colour out of the
+          soft edge. The API's default is ``True``; ``False`` keeps the
+          photo's own colours there.
+        - ``solidify``: makes semi-transparent areas inside the subject
+          opaque, for an opaque product the model was unsure about in places.
+          Wrong for glass, smoke or hair.
+
         The cutout can be staged in the same call: ``width`` and ``height``
         place the subject on a canvas, ``shadow`` and ``reflection`` go under
         it, and behind it goes one of ``background`` (a colour),
@@ -263,6 +291,12 @@ class Photos(BaseClient):
                 padding=padding,
                 model=model,
                 studio=studio,
+                feather=feather,
+                smooth=smooth,
+                shift=shift,
+                hardness=hardness,
+                decontaminate=decontaminate,
+                solidify=solidify,
                 mask=mask,
                 width=width,
                 height=height,
@@ -887,6 +921,12 @@ class AsyncPhotos(BaseClient):
         padding: Optional[int] = None,
         model: Optional[BackgroundModel] = None,
         studio: Optional[bool] = None,
+        feather: Optional[float] = None,
+        smooth: Optional[float] = None,
+        shift: Optional[float] = None,
+        hardness: Optional[float] = None,
+        decontaminate: Optional[bool] = None,
+        solidify: Optional[bool] = None,
         mask: Optional[bool] = None,
         width: Optional[int] = None,
         height: Optional[int] = None,
@@ -921,6 +961,28 @@ class AsyncPhotos(BaseClient):
         Shadows and the floor below the product are left out. A photo without
         a plain light backdrop is cut out as without it.
 
+        Six options change the cutout's edge. Each is sent only when given;
+        ``feather=0`` and ``decontaminate=False`` are values, and are sent:
+
+        - ``feather``: how soft the edge is, a blur of this many pixels across
+          it, 0 to 10. 0 is the model's hard edge. Left out, it grows with the
+          photo: 0.7 pixels for every 1000 of its long side.
+        - ``smooth``: irons out ripples in the outline, 0 (the API's default)
+          to 10. From about 4 it rounds small corners and breaks up thin
+          parts, such as a wire stand.
+        - ``shift``: moves the edge, in pixels, -10 to 10 (the API's default
+          is 0): inward when negative, outward when positive. A small negative
+          shift trims the light rim a dark subject shows on a dark background.
+        - ``hardness``: narrows the edge, after the feather: 0 (the API's
+          default) to 100, where it is about a pixel wide. On a dark
+          background, pair it with a small negative ``shift``.
+        - ``decontaminate``: cleans the old background's colour out of the
+          soft edge. The API's default is ``True``; ``False`` keeps the
+          photo's own colours there.
+        - ``solidify``: makes semi-transparent areas inside the subject
+          opaque, for an opaque product the model was unsure about in places.
+          Wrong for glass, smoke or hair.
+
         The cutout can be staged in the same call: ``width`` and ``height``
         place the subject on a canvas, ``shadow`` and ``reflection`` go under
         it, and behind it goes one of ``background`` (a colour),
@@ -936,6 +998,12 @@ class AsyncPhotos(BaseClient):
                 padding=padding,
                 model=model,
                 studio=studio,
+                feather=feather,
+                smooth=smooth,
+                shift=shift,
+                hardness=hardness,
+                decontaminate=decontaminate,
+                solidify=solidify,
                 mask=mask,
                 width=width,
                 height=height,

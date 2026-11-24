@@ -6,6 +6,21 @@ follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## 1.4.0 (2026-11-23)
+
+- `remove_background` takes six options for the cutout's edge: `feather` (0
+  to 10 pixels: how soft the edge is, 0 for the model's hard edge; left out,
+  it grows with the photo), `smooth` (0 to 10: irons out ripples in the
+  outline), `shift` (-10 to 10 pixels: moves the edge, inward when negative,
+  which trims the light rim a dark subject shows on a dark background),
+  `hardness` (0 to 100: narrows the edge after the feather), `decontaminate`
+  (`False` keeps the photo's own colours in the soft edge; the API's default
+  is `True`) and `solidify` (makes semi-transparent areas inside the subject
+  opaque). Each is sent only when given, and `feather=0` and
+  `decontaminate=False` are sent. The API checks the ranges and answers a
+  value outside one with `400` (`BadRequestError`). A `remove-background` job
+  takes them in `params`. Needs engine 0.1.16 (`feather` alone, 0.1.13).
+
 ## 1.3.0 (2026-11-20)
 
 - `remove_background` takes `model`, the model that finds the subject:

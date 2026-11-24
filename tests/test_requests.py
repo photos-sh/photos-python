@@ -108,6 +108,12 @@ def test_remove_background(api: Harness) -> None:
             background="#ffffff",
             crop=True,
             padding=20,
+            feather=2,
+            smooth=1.5,
+            shift=-1.5,
+            hardness=50,
+            decontaminate=True,
+            solidify=True,
             mask=False,
         ),
         image_response(
@@ -125,6 +131,12 @@ def test_remove_background(api: Harness) -> None:
         ("background", "#ffffff"),
         ("crop", "true"),
         ("padding", "20"),
+        ("feather", "2"),
+        ("smooth", "1.5"),
+        ("shift", "-1.5"),
+        ("hardness", "50"),
+        ("decontaminate", "true"),
+        ("solidify", "true"),
         ("mask", "false"),
     ]
     assert_one_image(api.request)
@@ -203,6 +215,50 @@ def test_remove_background_with_a_model(api: Harness) -> None:
     api.requests.clear()
     api.run(lambda c: c.remove_background(PNG, model=None), image_response())
     assert api.request.url.query == b""  # not sent unless given, so the API's default applies
+
+
+def test_remove_background_with_the_edge_options(api: Harness) -> None:
+    api.run(lambda c: c.remove_background(PNG, shift=-1.5, hardness=50), image_response())
+    assert_post(api.request, "/v1/remove-background")
+    assert query(api.request) == [("shift", "-1.5"), ("hardness", "50")]
+    assert_one_image(api.request)
+
+    api.requests.clear()
+    api.run(lambda c: c.remove_background(PNG, feather=0, decontaminate=False), image_response())
+    # 0 and False are values: sent, not taken for "not given"
+    assert query(api.request) == [("feather", "0"), ("decontaminate", "false")]
+
+    api.requests.clear()
+    api.run(
+        lambda c: c.remove_background(
+            PNG, feather=0, smooth=0, shift=0, hardness=0, decontaminate=False, solidify=False
+        ),
+        image_response(),
+    )
+    assert query(api.request) == [
+        ("feather", "0"),
+        ("smooth", "0"),
+        ("shift", "0"),
+        ("hardness", "0"),
+        ("decontaminate", "false"),
+        ("solidify", "false"),
+    ]
+
+    api.requests.clear()
+    api.run(
+        lambda c: c.remove_background(
+            PNG,
+            crop=True,
+            feather=None,
+            smooth=None,
+            shift=None,
+            hardness=None,
+            decontaminate=None,
+            solidify=None,
+        ),
+        image_response(),
+    )
+    assert query(api.request) == [("crop", "true")]  # not sent unless given
 
 
 def test_remove_background_with_a_background_image(api: Harness, tmp_path: Path) -> None:
@@ -1138,7 +1194,19 @@ def test_jobs_create_with_urls_sends_json(api: Harness) -> None:
         lambda c: c.jobs.create(
             "remove-background",
             urls=["https://example.com/1.jpg", "https://example.com/2.jpg"],
-            params={"format": "png", "crop": True, "padding": 10, "model": "muse", "quality": None},
+            params={
+                "format": "png",
+                "crop": True,
+                "padding": 10,
+                "model": "muse",
+                "feather": 0,
+                "smooth": 2,
+                "shift": -1.5,
+                "hardness": 50,
+                "decontaminate": False,
+                "solidify": True,
+                "quality": None,
+            },
             webhook_url="https://example.com/hook",
         ),
         json_response(JOB, 202),
@@ -1148,7 +1216,18 @@ def test_jobs_create_with_urls_sends_json(api: Harness) -> None:
     assert json.loads(api.request.content) == {
         "operation": "remove-background",
         "inputs": ["https://example.com/1.jpg", "https://example.com/2.jpg"],
-        "params": {"format": "png", "crop": True, "padding": 10, "model": "muse"},
+        "params": {
+            "format": "png",
+            "crop": True,
+            "padding": 10,
+            "model": "muse",
+            "feather": 0,
+            "smooth": 2,
+            "shift": -1.5,
+            "hardness": 50,
+            "decontaminate": False,
+            "solidify": True,
+        },
         "webhook_url": "https://example.com/hook",
     }
     assert result == JOB
